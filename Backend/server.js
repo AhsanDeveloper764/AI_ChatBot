@@ -11,14 +11,17 @@ const creditRoute = require("./routes/creditsHours");
 const stripeWebhook = require('./controllers/webhook');
 
 // Port Connection 
-const PORT = process.env.PORT || 3000
-
-// Built-In Middleware
-app.use(express.json())
+// const PORT = process.env.PORT || 3000
 
 // Connectivity
 app.use(cors())
+// Built-In Middleware
+app.use(express.json())
 
+
+app.get("/", (req, res) => {
+  res.send("Backend API is live ");
+});
 // Stripe WebHooks
 app.post("/api/stripe",express.raw({type:"application/json"}),stripeWebhook)
 
@@ -29,13 +32,14 @@ app.use("/api/msg",msgRoutes)
 app.use("/api/credit",creditRoute)
 
 // db connection
-const dbConnect = async () => {
-    await connectDB();
-    app.listen(PORT,()=>{
-        console.log(`Backend Server Running on PORT ${PORT}`)
-    })
-}
-dbConnect();
+// const dbConnect = async () => {
+//     await connectDB();
+//     app.listen(PORT,()=>{
+//         console.log(`Backend Server Running on PORT ${PORT}`)
+//     })
+// }
+// dbConnect();
+connectDB();
 
 // You’re using CommonJS syntax (require)
 // but also using top-level await,
