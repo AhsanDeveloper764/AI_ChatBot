@@ -1,0 +1,80 @@
+const transactionModel = require("../models/Transaction")
+const Stripe = require("stripe")
+
+const Plans = [
+    {
+        _id: "basic",
+        name: "Basic",
+        price: 10,
+        credits: 100,
+        features: ['100 text generations', '50 image generations', 'Standard support', 'Access to basic models']
+    },
+    {
+        _id: "pro",
+        name: "Pro",
+        price: 20,
+        credits: 500,
+        features: ['500 text generations', '200 image generations', 'Priority support', 'Access to pro models', 'Faster response time']
+    },
+    {
+        _id: "premium",
+        name: "Premium",
+        price: 30,
+        credits: 1000,
+        features: ['1000 text generations', '500 image generations', '24/7 VIP support', 'Access to premium models', 'Dedicated account manager']
+    }
+]
+
+// API controller for getting all plans
+const getPlans = async (req,resp) => {
+    try {
+        resp.json({success:true,Plans})
+    } catch (error) {
+        resp.json({success:false,message:error.message})
+    }
+}
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
+
+// API Controller for Purchasing a plan
+const purchasePlans = async (req,resp) => {
+    try {
+        const {planId} = req.body
+        const userId = req.user._id
+        const plan = Plans.find(plan => plan._id === planId) 
+        if(!plan){
+            resp.json({success:false,message:"Invalid Plans"})
+        }
+        const transaction = await transactionModel.create({
+            userId:userId,
+            planId:plan._id,
+            amount:plan.price,
+            credits:plan.credits,
+            isPaid: false
+        })
+        const {origin} = req.headers;
+        const session = await stripe.checkout.sessions.create({
+            line_items: [
+                {
+                    price_data:{
+                        currency:"usd",
+                        unit_amount:plan.price * 100,
+                        product_data:{
+                            name:plan.name
+                        } 
+                    },
+                    quantity: 1,
+                },
+            ],
+            mode: 'payment',
+            success_url:`${origin}/loading`,
+               cancel_url:`${origin}/`,
+            metadata:{transaction:transaction._id.toString(),appId:"ChatBot"},
+            expires_at:Math.floor(Date.now()/1000)+30*60 // expires in 30 Minutes
+        });
+        resp.json({success:true,url:session.url})
+    } catch (error) {
+        resp.json({success:false,message:error.message})
+    }
+}
+module.exports = {getPlans,purchasePlans}
