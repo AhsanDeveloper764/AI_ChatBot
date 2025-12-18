@@ -46,3 +46,4 @@ connectDB();
 // which is only allowed in ES Modules (ESM).
 // Node.js confuse ho jata hai ke code CommonJS hai ya ESM — isliye ye error throw karta hai:
 // Cannot determine intended module format because both require() and top-level await are present.
+module.exports = app
